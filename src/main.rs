@@ -19,6 +19,7 @@ fn main() -> Result<(), eframe::Error> {
 
 struct Cluster {
     pods: Vec<Pod>,
+    selected_resource: SelectedResource,
 }
 
 impl Default for Cluster {
@@ -36,7 +37,10 @@ impl Default for Cluster {
             },
         ];
 
-        Self { pods }
+        Self {
+            pods: pods,
+            selected_resource: SelectedResource::None,
+        }
     }
 }
 
@@ -46,16 +50,45 @@ struct Pod {
     ip: String,
 }
 
+enum SelectedResource {
+    None,
+    Pods,
+    Services,
+}
 impl eframe::App for Cluster {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("My Cluster");
-            for pod in self.pods.iter() {
-                ui.label(format!(
-                    "Pod: name '{}', status {}, ip {}",
-                    pod.name, pod.status, pod.ip
-                ));
-            }
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            ui.horizontal_centered(|ui_buttons| {
+                if ui_buttons.button("Pods").clicked() {
+                    self.selected_resource = SelectedResource::Pods;
+                };
+                if ui_buttons.button("Services").clicked() {
+                    self.selected_resource = SelectedResource::Services;
+                };
+            })
         });
+        match self.selected_resource {
+            SelectedResource::None => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("Welcome");
+                });
+            }
+            SelectedResource::Pods => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("Pods");
+                    for pod in self.pods.iter() {
+                        ui.label(format!(
+                            "Pod: name '{}', status {}, ip {}",
+                            pod.name, pod.status, pod.ip
+                        ));
+                    }
+                });
+            }
+            SelectedResource::Services => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("Services");
+                });
+            }
+        }
     }
 }
