@@ -44,6 +44,23 @@ impl Default for Cluster {
     }
 }
 
+impl Cluster {
+    fn get_pods(&self) -> Vec<Pod> {
+        vec![
+            Pod {
+                name: "k8s-depl-back-6c68868d86-967xc".to_string(),
+                status: "Running".to_string(),
+                ip: "172.17.0.7".to_string(),
+            },
+            Pod {
+                name: "k8s-depl-back-6c68868d86-967xc".to_string(),
+                status: "Running".to_string(),
+                ip: "172.17.0.7".to_string(),
+            },
+        ]
+    }
+}
+
 struct Pod {
     name: String,
     status: String,
@@ -77,6 +94,13 @@ impl eframe::App for Cluster {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.heading("Pods");
                     for pod in self.pods.iter() {
+                        ui.label(format!(
+                            "Pod: name '{}', status {}, ip {}",
+                            pod.name, pod.status, pod.ip
+                        ));
+                    }
+                    ui.heading("Pods using method");
+                    for pod in self.get_pods().iter() {
                         ui.label(format!(
                             "Pod: name '{}', status {}, ip {}",
                             pod.name, pod.status, pod.ip
