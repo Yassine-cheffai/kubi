@@ -12,6 +12,12 @@ struct Pod {
     start_time: String,
 }
 
+impl Pod {
+    fn stop(&self) {
+        println!("stoping pod {}", self.name)
+    }
+}
+
 fn main() -> Result<(), eframe::Error> {
     // Log to stdout (if you run with `RUST_LOG=debug`).
     tracing_subscriber::fmt::init();
@@ -58,6 +64,7 @@ impl Default for Cluster {
     }
 }
 
+#[derive(PartialEq)]
 enum SelectedResource {
     None,
     Pods,
@@ -66,13 +73,13 @@ enum SelectedResource {
 impl eframe::App for Cluster {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.horizontal_centered(|ui_buttons| {
-                if ui_buttons.button("Pods").clicked() {
-                    self.selected_resource = SelectedResource::Pods;
-                };
-                if ui_buttons.button("Services").clicked() {
-                    self.selected_resource = SelectedResource::Services;
-                };
+            ui.horizontal_centered(|ui| {
+                ui.selectable_value(&mut self.selected_resource, SelectedResource::Pods, "Pods");
+                ui.selectable_value(
+                    &mut self.selected_resource,
+                    SelectedResource::Services,
+                    "Services",
+                );
             })
         });
         match self.selected_resource {
@@ -91,14 +98,24 @@ impl eframe::App for Cluster {
                         ui.label("IP");
                         ui.label("NOMINATED NODE");
                         ui.label("START TIME");
+                        ui.label("");
                         ui.end_row();
 
                         for pod in self.pods.iter_mut() {
-                            ui.checkbox(&mut pod.is_selected, &pod.name);
+                            // ui.checkbox(&mut pod.is_selected, &pod.name);
+                            ui.label(&pod.name);
                             ui.label(&pod.status);
                             ui.label(&pod.ip);
                             ui.label(&pod.nominated_node);
                             ui.label(&pod.start_time);
+                            ui.menu_button("Actions", |ui| {
+                                if ui.button("Stop").clicked() {
+                                    pod.stop();
+                                };
+                                if ui.button("Describe").clicked() {
+                                    println!("pod describtion");
+                                };
+                            });
                             ui.end_row();
                         }
                     });
