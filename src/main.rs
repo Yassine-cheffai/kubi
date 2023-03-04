@@ -3,6 +3,12 @@
 use eframe::egui;
 mod resources;
 
+#[derive(PartialEq)]
+enum SelectedResource {
+    None,
+    Pods,
+    Services,
+}
 struct Pod {
     is_selected: bool,
     name: String,
@@ -16,21 +22,6 @@ impl Pod {
     fn stop(&self) {
         println!("stoping pod {}", self.name)
     }
-}
-
-fn main() -> Result<(), eframe::Error> {
-    // Log to stdout (if you run with `RUST_LOG=debug`).
-    tracing_subscriber::fmt::init();
-
-    let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(640.0, 480.0)),
-        ..Default::default()
-    };
-    eframe::run_native(
-        "Kubi - the kubernets desktop application",
-        options,
-        Box::new(|_cc| Box::new(Cluster::default())),
-    )
 }
 
 struct Cluster {
@@ -64,12 +55,6 @@ impl Default for Cluster {
     }
 }
 
-#[derive(PartialEq)]
-enum SelectedResource {
-    None,
-    Pods,
-    Services,
-}
 impl eframe::App for Cluster {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -80,7 +65,7 @@ impl eframe::App for Cluster {
                     SelectedResource::Services,
                     "Services",
                 );
-            })
+            });
         });
         match self.selected_resource {
             SelectedResource::None => {
@@ -91,6 +76,7 @@ impl eframe::App for Cluster {
             SelectedResource::Pods => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.heading("Pods");
+                    ui.separator();
 
                     egui::Grid::new("some_unique_id").show(ui, |ui| {
                         ui.label("NAME");
@@ -108,7 +94,7 @@ impl eframe::App for Cluster {
                             ui.label(&pod.ip);
                             ui.label(&pod.nominated_node);
                             ui.label(&pod.start_time);
-                            ui.menu_button("Actions", |ui| {
+                            ui.menu_button("☰", |ui| {
                                 if ui.button("Stop").clicked() {
                                     pod.stop();
                                 };
@@ -128,4 +114,19 @@ impl eframe::App for Cluster {
             }
         }
     }
+}
+
+fn main() -> Result<(), eframe::Error> {
+    // Log to stdout (if you run with `RUST_LOG=debug`).
+    tracing_subscriber::fmt::init();
+
+    let options = eframe::NativeOptions {
+        initial_window_size: Some(egui::vec2(640.0, 480.0)),
+        ..Default::default()
+    };
+    eframe::run_native(
+        "Kubi - the kubernets desktop application",
+        options,
+        Box::new(|_cc| Box::new(Cluster::default())),
+    )
 }
