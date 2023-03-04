@@ -1,6 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::egui;
+mod resources;
+
+struct Pod {
+    name: String,
+    status: String,
+    ip: String,
+    nominated_node: String,
+    start_time: String,
+}
 
 fn main() -> Result<(), eframe::Error> {
     // Log to stdout (if you run with `RUST_LOG=debug`).
@@ -18,53 +27,39 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 struct Cluster {
-    pods: Vec<Pod>,
     selected_resource: SelectedResource,
+    pods: Vec<Pod>,
 }
 
 impl Default for Cluster {
     fn default() -> Self {
-        let pods: Vec<Pod> = vec![
-            Pod {
-                name: "k8s-depl-back-6c68868d86-967xc".to_string(),
-                status: "Running".to_string(),
-                ip: "172.17.0.7".to_string(),
-            },
-            Pod {
-                name: "k8s-depl-back-6c68868d86-967xc".to_string(),
-                status: "Running".to_string(),
-                ip: "172.17.0.7".to_string(),
-            },
-        ];
-
         Self {
-            pods: pods,
             selected_resource: SelectedResource::None,
+            pods: vec![],
         }
     }
 }
 
 impl Cluster {
     fn get_pods(&self) -> Vec<Pod> {
-        vec![
-            Pod {
-                name: "k8s-depl-back-6c68868d86-967xc".to_string(),
-                status: "Running".to_string(),
-                ip: "172.17.0.7".to_string(),
-            },
-            Pod {
-                name: "k8s-depl-back-6c68868d86-967xc".to_string(),
-                status: "Running".to_string(),
-                ip: "172.17.0.7".to_string(),
-            },
-        ]
+        let result_pods = resources::get_pods();
+        let mut result: Vec<Pod> = vec![];
+        match result_pods {
+            Ok(pods) => {
+                for pod in pods {
+                    result.push(Pod {
+                        name: pod["name"].clone(),
+                        status: pod["status"].clone(),
+                        ip: pod["ip"].clone(),
+                        nominated_node: pod["nominated_node"].clone(),
+                        start_time: pod["start_time"].clone(),
+                    })
+                }
+            }
+            Err(_) => {}
+        }
+        return result;
     }
-}
-
-struct Pod {
-    name: String,
-    status: String,
-    ip: String,
 }
 
 enum SelectedResource {
@@ -93,19 +88,25 @@ impl eframe::App for Cluster {
             SelectedResource::Pods => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.heading("Pods");
-                    for pod in self.pods.iter() {
-                        ui.label(format!(
-                            "Pod: name '{}', status {}, ip {}",
-                            pod.name, pod.status, pod.ip
-                        ));
-                    }
-                    ui.heading("Pods using method");
-                    for pod in self.get_pods().iter() {
-                        ui.label(format!(
-                            "Pod: name '{}', status {}, ip {}",
-                            pod.name, pod.status, pod.ip
-                        ));
-                    }
+
+                    egui::Grid::new("some_unique_id").show(ui, |ui| {
+                        ui.label("NAME");
+                        ui.label("STATUS");
+                        ui.label("IP");
+                        ui.label("NOMINATED NODE");
+                        ui.label("START TIME");
+                        ui.end_row();
+
+                        for pod in self.get_pods().iter() {
+                            ui.checkbox(&mut false, &pod.name);
+                            // ui.label(&pod.name);
+                            ui.label(&pod.status);
+                            ui.label(&pod.ip);
+                            ui.label(&pod.nominated_node);
+                            ui.label(&pod.start_time);
+                            ui.end_row();
+                        }
+                    });
                 });
             }
             SelectedResource::Services => {
