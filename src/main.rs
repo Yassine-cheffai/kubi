@@ -4,6 +4,7 @@ use eframe::egui;
 mod resources;
 
 struct Pod {
+    is_selected: bool,
     name: String,
     status: String,
     ip: String,
@@ -33,21 +34,16 @@ struct Cluster {
 
 impl Default for Cluster {
     fn default() -> Self {
-        Self {
+        let mut cluster = Cluster {
             selected_resource: SelectedResource::None,
             pods: vec![],
-        }
-    }
-}
-
-impl Cluster {
-    fn get_pods(&self) -> Vec<Pod> {
+        };
         let result_pods = resources::get_pods();
-        let mut result: Vec<Pod> = vec![];
         match result_pods {
             Ok(pods) => {
                 for pod in pods {
-                    result.push(Pod {
+                    cluster.pods.push(Pod {
+                        is_selected: false,
                         name: pod["name"].clone(),
                         status: pod["status"].clone(),
                         ip: pod["ip"].clone(),
@@ -55,10 +51,10 @@ impl Cluster {
                         start_time: pod["start_time"].clone(),
                     })
                 }
+                return cluster;
             }
-            Err(_) => {}
+            Err(_) => return cluster,
         }
-        return result;
     }
 }
 
@@ -97,9 +93,8 @@ impl eframe::App for Cluster {
                         ui.label("START TIME");
                         ui.end_row();
 
-                        for pod in self.get_pods().iter() {
-                            ui.checkbox(&mut false, &pod.name);
-                            // ui.label(&pod.name);
+                        for pod in self.pods.iter_mut() {
+                            ui.checkbox(&mut pod.is_selected, &pod.name);
                             ui.label(&pod.status);
                             ui.label(&pod.ip);
                             ui.label(&pod.nominated_node);
